@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Maharashtra Real Estate Intelligence Map - Interactive satellite map with land records, infrastructure projects, and investment hotspot analysis for Mumbai, Nashik, and Samruddhi Mahamarg corridor.">
+    <title>Maharashtra Real Estate Intelligence Map</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Main Application Container -->
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-brand">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="14" stroke="url(#gradient)" stroke-width="2" />
+                        <path d="M16 6L20 14H12L16 6Z" fill="url(#gradient)" />
+                        <circle cx="16" cy="20" r="4" fill="url(#gradient)" />
+                        <defs>
+                            <linearGradient id="gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop stop-color="#6366f1" />
+                                <stop offset="1" stop-color="#8b5cf6" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h1 class="header-title">Maharashtra Real Estate Intelligence</h1>
+            </div>
+            <div class="header-search">
+                <div class="search-container">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="M21 21l-4.35-4.35" />
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Search by Survey Number or Village..."
+                        class="search-input">
+                    <button id="searchBtn" class="search-btn">Search</button>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="digilockerBtn" class="btn btn-government"
+                    title="Login with DigiLocker to fetch your land records">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    DigiLocker
+                </button>
+                <button id="importBtn" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    Import
+                </button>
+                <button id="addPlotBtn" class="btn btn-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add Plot
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Map Container -->
+            <div id="map" class="map-container"></div>
+
+            <!-- My Location Button -->
+            <button id="myLocationBtn" class="my-location-btn" title="Go to my location">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                    <circle cx="12" cy="12" r="8" />
+                </svg>
+            </button>
+            <!-- Sidebar - Plot Information Panel -->
+            <aside id="sidebar" class="sidebar">
+                <div class="sidebar-header">
+                    <h2 class="sidebar-title">Plot Information</h2>
+                    <button id="closeSidebar" class="close-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="sidebar-content">
+                    <!-- Welcome Message (shown when no plot selected) -->
+                    <div id="welcomeMessage" class="welcome-message">
+                        <div class="welcome-icon">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                                <line x1="8" y1="2" x2="8" y2="18" />
+                                <line x1="16" y1="6" x2="16" y2="22" />
+                            </svg>
+                        </div>
+                        <h3>Select a Plot</h3>
+                        <p>Click on any highlighted plot on the map to view detailed land records and ownership
+                            information.</p>
+                    </div>
+
+                    <!-- Plot Details (shown when plot selected) -->
+                    <div id="plotDetails" class="plot-details hidden">
+                        <!-- Survey Details -->
+                        <section class="detail-section">
+                            <h3 class="section-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg>
+                                Location
+                            </h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Survey Number</span>
+                                    <span id="surveyNumber" class="detail-value">--</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Village</span>
+                                    <span id="village" class="detail-value">--</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Taluka</span>
+                                    <span id="taluka" class="detail-value">--</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">District</span>
+                                    <span id="district" class="detail-value">--</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Land Details -->
+                        <section class="detail-section">
+                            <h3 class="section-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="3" y1="9" x2="21" y2="9" />
+                                    <line x1="9" y1="21" x2="9" y2="9" />
+                                </svg>
+                                Land Details
+                            </h3>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Area</span>
+                                    <span id="area" class="detail-value">--</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Land Type</span>
+                                    <span id="landType" class="detail-value badge">--</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- NA Status -->
+                        <section class="detail-section">
+                            <h3 class="section-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                    <polyline points="10 9 9 9 8 9" />
+                                </svg>
+                                NA Status
+                            </h3>
+                            <div class="na-status-container">
+                                <div id="naStatus" class="na-status">--</div>
+                                <div id="industrialNA" class="industrial-na hidden">
+                                    <span class="badge badge-industrial">Industrial NA</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Ownership History -->
+                        <section class="detail-section">
+                            <h3 class="section-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="9" cy="7" r="4" />
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                </svg>
+                                Ownership History
+                            </h3>
+                            <div id="ownerHistory" class="owner-history">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </section>
+
+                        <!-- Nearby Infrastructure -->
+                        <section class="detail-section">
+                            <h3 class="section-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <polyline points="12 6 12 12 16 14" />
+                                </svg>
+                                Nearby Infrastructure
+                            </h3>
+                            <div id="nearbyInfra" class="nearby-infra">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Layer Control Panel -->
+            <div id="layerPanel" class="layer-panel">
+                <div class="layer-panel-header">
+                    <h3>Layers</h3>
+                    <button id="toggleLayerPanel" class="toggle-panel-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="layer-panel-content">
+                    <!-- Base Layers -->
+                    <div class="layer-group">
+                        <h4 class="layer-group-title">Base Map</h4>
+                        <label class="layer-option">
+                            <input type="radio" name="baseLayer" value="satellite" checked>
+                            <span class="layer-radio"></span>
+                            <span class="layer-name">Satellite</span>
+                        </label>
+                        <label class="layer-option">
+                            <input type="radio" name="baseLayer" value="streets">
+                            <span class="layer-radio"></span>
+                            <span class="layer-name">Streets</span>
+                        </label>
+                        <label class="layer-option">
+                            <input type="radio" name="baseLayer" value="hybrid">
+                            <span class="layer-radio"></span>
+                            <span class="layer-name">Hybrid</span>
+                        </label>
+                    </div>
+
+                    <!-- Overlay Layers -->
+                    <div class="layer-group">
+                        <h4 class="layer-group-title">Data Layers</h4>
+                        <label class="layer-option">
+                            <input type="checkbox" id="layerPlots" checked>
+                            <span class="layer-checkbox"></span>
+                            <span class="layer-name">Plots</span>
+                            <span class="layer-color" style="background: rgba(99, 102, 241, 0.6)"></span>
+                        </label>
+                        <label class="layer-option">
+                            <input type="checkbox" id="layerHotspots" checked>
+                            <span class="layer-checkbox"></span>
+                            <span class="layer-name">Hotspot Zones</span>
+                            <span class="layer-color" style="background: rgba(34, 197, 94, 0.3)"></span>
+                        </label>
+                    </div>
+
+                    <!-- Infrastructure Layers -->
+                    <div class="layer-group">
+                        <h4 class="layer-group-title">Infrastructure</h4>
+                        <label class="layer-option">
+                            <input type="checkbox" id="layerCoastalRoad" checked>
+                            <span class="layer-checkbox"></span>
+                            <span class="layer-name">Coastal Road</span>
+                            <span class="layer-color" style="background: #f59e0b"></span>
+                        </label>
+                        <label class="layer-option">
+                            <input type="checkbox" id="layerAtalSetu" checked>
+                            <span class="layer-checkbox"></span>
+                            <span class="layer-name">Atal Setu (MTHL)</span>
+                            <span class="layer-color" style="background: #ef4444"></span>
+                        </label>
+                        <label class="layer-option">
+                            <input type="checkbox" id="layerSamruddhi" checked>
+                            <span class="layer-checkbox"></span>
+                            <span class="layer-name">Samruddhi Mahamarg</span>
+                            <span class="layer-color" style="background: #8b5cf6"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div id="legend" class="legend">
+                <h4 class="legend-title">Legend</h4>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-color"
+                            style="background: rgba(99, 102, 241, 0.6); border: 2px solid #6366f1;"></span>
+                        <span>Agricultural Land</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color"
+                            style="background: rgba(34, 197, 94, 0.6); border: 2px solid #22c55e;"></span>
+                        <span>NA Approved</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color"
+                            style="background: rgba(234, 179, 8, 0.6); border: 2px solid #eab308;"></span>
+                        <span>NA Pending</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color"
+                            style="background: rgba(239, 68, 68, 0.6); border: 2px solid #ef4444;"></span>
+                        <span>Industrial NA</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-line" style="background: #f59e0b;"></span>
+                        <span>Coastal Road</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-line" style="background: #ef4444;"></span>
+                        <span>Atal Setu</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-line" style="background: #8b5cf6;"></span>
+                        <span>Samruddhi Mahamarg</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color"
+                            style="background: rgba(34, 197, 94, 0.15); border: 2px dashed #22c55e;"></span>
+                        <span>Investment Hotspot</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zoom to Location Controls -->
+            <div class="quick-nav">
+                <button class="quick-nav-btn" data-location="mumbai" title="Go to Mumbai">
+                    <span>Mumbai</span>
+                </button>
+                <button class="quick-nav-btn" data-location="nashik" title="Go to Nashik">
+                    <span>Nashik</span>
+                </button>
+                <button class="quick-nav-btn" data-location="thane" title="Go to Thane">
+                    <span>Thane</span>
+                </button>
+            </div>
+        </main>
+
+        <!-- Add Plot Modal -->
+        <div id="addPlotModal" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add New Plot</h2>
+                    <button id="closeModal" class="close-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+                <form id="addPlotForm" class="modal-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="formSurveyNumber">Survey Number *</label>
+                            <input type="text" id="formSurveyNumber" required placeholder="e.g., 123/A">
+                        </div>
+                        <div class="form-group">
+                            <label for="formVillage">Village *</label>
+                            <input type="text" id="formVillage" required placeholder="e.g., Kalyan">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="formTaluka">Taluka *</label>
+                            <input type="text" id="formTaluka" required placeholder="e.g., Kalyan">
+                        </div>
+                        <div class="form-group">
+                            <label for="formDistrict">District *</label>
+                            <select id="formDistrict" required>
+                                <option value="">Select District</option>
+                                <option value="Mumbai">Mumbai</option>
+                                <option value="Mumbai Suburban">Mumbai Suburban</option>
+                                <option value="Thane">Thane</option>
+                                <option value="Raigad">Raigad</option>
+                                <option value="Nashik">Nashik</option>
+                                <option value="Pune">Pune</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="formArea">Area (in Hectares) *</label>
+                            <input type="number" id="formArea" required step="0.01" placeholder="e.g., 2.5">
+                        </div>
+                        <div class="form-group">
+                            <label for="formLandType">Land Type *</label>
+                            <select id="formLandType" required>
+                                <option value="Agricultural">Agricultural</option>
+                                <option value="Non-Agricultural">Non-Agricultural</option>
+                                <option value="Residential">Residential</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Industrial">Industrial</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="formNAStatus">NA Status *</label>
+                            <select id="formNAStatus" required>
+                                <option value="Not Applied">Not Applied</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="formIndustrialNA">Industrial NA</label>
+                            <select id="formIndustrialNA">
+                                <option value="No">No</option>
+                                <option value="Yes">Yes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="formOwners">Owner History (comma separated)</label>
+                        <input type="text" id="formOwners" placeholder="e.g., Ram Singh (2018), Suresh Patel (2010)">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Plot Coordinates</label>
+                        <p class="form-help">Click on the map to mark plot boundaries, or enter coordinates manually.
+                        </p>
+                        <textarea id="formCoordinates" placeholder="[[lat, lng], [lat, lng], ...]" rows="3"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="cancelAddPlot" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Plot</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="importModal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Import Plot Data</h2>
+                <button id="closeImportModal" class="close-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Import Tabs -->
+                <div class="import-tabs">
+                    <button class="import-tab active" data-tab="file">File Import</button>
+                    <button class="import-tab" data-tab="manual">Manual Coordinates</button>
+                    <button class="import-tab" data-tab="guide">Bhunaksha Lookup</button>
+                </div>
+
+                <!-- File Import Tab -->
+                <div id="tabFile" class="import-tab-content active">
+                    <div class="file-upload-area" id="dropZone">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <p>Drag & drop files here or <label for="fileInput" class="file-browse">browse</label></p>
+                        <input type="file" id="fileInput" accept=".csv,.json,.geojson" hidden>
+                        <span class="file-types">Supported: CSV, GeoJSON</span>
+                    </div>
+                    <div id="filePreview" class="file-preview hidden">
+                        <div class="file-info">
+                            <span id="fileName"></span>
+                            <button id="clearFile" class="btn-icon">×</button>
+                        </div>
+                        <div id="previewContent" class="preview-content"></div>
+                    </div>
+
+                    <div class="csv-format-help">
+                        <h4>CSV Format:</h4>
+                        <code>surveyNumber,village,taluka,district,area,landType,naStatus,industrialNA,lat1,lng1,lat2,lng2,lat3,lng3,lat4,lng4</code>
+                        <p>Example row:</p>
+                        <code>123/A,Kalyan,Kalyan,Thane,2.5,Agricultural,Pending,No,19.245,73.130,19.245,73.135,19.240,73.135,19.240,73.130</code>
+                    </div>
+                </div>
+
+                <!-- Manual Coordinates Tab -->
+                <div id="tabManual" class="import-tab-content hidden">
+                    <div class="form-group">
+                        <label>Paste GeoJSON Feature or FeatureCollection:</label>
+                        <textarea id="manualGeoJson" rows="10" placeholder='{
+  "type": "Feature",
+  "properties": {
+    "surveyNumber": "123/A",
+    "village": "Kalyan",
+    "taluka": "Kalyan",
+    "district": "Thane",
+    "area": "2.5 Hectares",
+    "landType": "Agricultural",
+    "naStatus": "Pending"
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[[73.13, 19.24], [73.14, 19.24], [73.14, 19.23], [73.13, 19.23], [73.13, 19.24]]]
+  }
+}'></textarea>
+                    </div>
+                    <button id="parseManualBtn" class="btn btn-primary">Parse & Preview</button>
+                </div>
+
+                <!-- Bhunaksha Lookup Tab -->
+                <div id="tabGuide" class="import-tab-content hidden">
+                    <div class="bhunaksha-lookup">
+                        <h3>🗺️ Bhunaksha Plot Lookup</h3>
+                        <p class="lookup-subtitle">Select location and open official government portal</p>
+
+                        <div class="lookup-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>District</label>
+                                    <select id="bhunakshaDistrict">
+                                        <option value="">Select District...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Taluka</label>
+                                    <select id="bhunakshaTaluka" disabled>
+                                        <option value="">Select Taluka...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Village</label>
+                                    <input type="text" id="bhunakshaVillage" placeholder="Enter village name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Survey/Gat Number</label>
+                                    <input type="text" id="bhunakshaSurveyNo" placeholder="e.g., 123/A">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lookup-actions">
+                            <button id="openBhunakshaBtn" class="btn btn-government btn-large">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                    <polyline points="15 3 21 3 21 9" />
+                                    <line x1="10" y1="14" x2="21" y2="3" />
+                                </svg>
+                                Open Bhunaksha Portal
+                            </button>
+                        </div>
+
+                        <div class="lookup-instructions">
+                            <h4>📋 How to get coordinates:</h4>
+                            <ol>
+                                <li>Click "Open Bhunaksha Portal" above</li>
+                                <li>Your location will be pre-selected</li>
+                                <li>Find your plot and click on each corner</li>
+                                <li>Note the coordinates shown at the bottom</li>
+                                <li>Come back here and paste them below</li>
+                            </ol>
+                        </div>
+
+                        <div class="coordinate-capture">
+                            <h4>📍 Paste Coordinates Here:</h4>
+                            <textarea id="capturedCoords" rows="4" placeholder="Paste coordinates from Bhunaksha here...
+Example: 
+19.2345, 73.1234
+19.2345, 73.1345
+19.2234, 73.1345
+19.2234, 73.1234"></textarea>
+                            <div class="capture-actions">
+                                <button id="parseCoordinatesBtn" class="btn btn-primary">Parse & Create Plot</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelImport" class="btn btn-secondary">Cancel</button>
+                <button id="confirmImport" class="btn btn-primary" disabled>Import Data</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Application Scripts -->
+    <script src="gov-api.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
